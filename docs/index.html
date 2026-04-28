@@ -139,7 +139,7 @@ graph TD
             NAT[NAT Gateway]
         end
         subgraph Private["Private Subnets"]
-            ECS["ECS Fargate — 3 Tasks"]
+            ECS["ECS Fargate - 3 Tasks"]
             Lambda1["Lambda: Authorizer"]
             Lambda2["Lambda: Processor"]
             RDS[("Aurora PostgreSQL")]
@@ -230,7 +230,7 @@ graph TD
     Lambda2 --> SQS
     Lambda2 --> DDB
     Lambda3 --> SNS
-    SQS -.-> |"3 retries"| DDB
+    SQS -.-> DDB
     ECS -.-> NAT --> Internet
     style VPC fill:#e1f5fe,stroke:#0288d1
     style Public fill:#fff3e0,stroke:#ef6c00
@@ -259,7 +259,7 @@ graph TB
     end
     subgraph SZ["Secrets and IAM"]
         SM["Secrets Manager"]
-        IAM["IAM Roles — Least privilege"]
+        IAM["IAM Roles - Least privilege"]
     end
     PZ --> AZ --> DZ
     AZ --> SZ
