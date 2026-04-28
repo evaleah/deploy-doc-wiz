@@ -372,16 +372,40 @@ graph TB
 </div>
 </div>
 <script>
+mermaid.initialize({ startOnLoad:false, theme:'default', securityLevel:'loose' });
+
+async function renderMermaidIn(container) {
+  const els = container.querySelectorAll('.mermaid:not([data-processed])');
+  for (const el of els) {
+    const code = el.textContent.trim();
+    if (!code) continue;
+    try {
+      const id = 'mermaid-' + Math.random().toString(36).substring(2,10);
+      const {svg} = await mermaid.render(id, code);
+      el.innerHTML = svg;
+      el.setAttribute('data-processed','true');
+    } catch(e) {
+      console.error('Mermaid error:', e);
+      el.innerHTML = '<pre style="color:red;text-align:left;">Diagram error: '+e.message+'</pre>';
+    }
+  }
+}
+
+// Render visible tab on load
+renderMermaidIn(document.querySelector('.tab-content.active'));
+
 // Tab switching
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     tab.classList.add('active');
-    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    const panel = document.getElementById('tab-' + tab.dataset.tab);
+    panel.classList.add('active');
+    renderMermaidIn(panel);
   });
 });
-
+</script>
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function animateStep(stepId, logs, logEl) {
@@ -457,6 +481,7 @@ async function runScenario1() {
   result.style.display = 'block';
   document.getElementById('s1-diff').innerHTML = getDiffHtml();
   document.getElementById('s1-analysis').innerHTML = getAnalysisHtml();
+  renderMermaidIn(result);
   btn.disabled = false; btn.classList.remove('running'); btn.innerHTML = '<span>▶</span> Run Again';
 }
 
@@ -603,7 +628,6 @@ function getIssueHtml() {
     + '</div>';
 }
 
-mermaid.initialize({ startOnLoad:true, theme:'default', securityLevel:'loose', logLevel:'error' });
 </script>
 </body>
 </html>
