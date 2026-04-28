@@ -198,25 +198,25 @@ graph TD
 graph TD
     Internet((Internet))
     IGW[Internet Gateway]
-    ALB["Application Load Balancer&lt;br/&gt;HTTPS :443"]
-    APIGW["API Gateway&lt;br/&gt;HTTP API"]
+    ALB["ALB - HTTPS :443"]
+    APIGW["API Gateway - HTTP API"]
     subgraph VPC["VPC 10.0.0.0/16"]
-        subgraph Public["Public Subnets (10.0.1.0/24, 10.0.2.0/24)"]
+        subgraph Public["Public Subnets"]
             ALB
             NAT[NAT Gateway]
         end
-        subgraph Private["Private Subnets (10.0.10.0/24, 10.0.11.0/24)"]
-            ECS["ECS Fargate&lt;br/&gt;3 Tasks, 512 CPU, 1024 MB"]
-            Lambda1["Lambda: Authorizer&lt;br/&gt;Python 3.12, 256 MB"]
-            Lambda2["Lambda: Data Processor&lt;br/&gt;Python 3.12, 512 MB"]
-            Lambda3["Lambda: Notifications&lt;br/&gt;Python 3.12, 256 MB"]
-            RDS[("Aurora PostgreSQL&lt;br/&gt;Serverless v2, 0.5-8 ACU&lt;br/&gt;Encrypted")]
-            Redis[("ElastiCache Redis 7.0&lt;br/&gt;2-node, TLS enabled")]
+        subgraph Private["Private Subnets"]
+            ECS["ECS Fargate - 3 Tasks"]
+            Lambda1["Lambda: Authorizer"]
+            Lambda2["Lambda: Data Processor"]
+            Lambda3["Lambda: Notifications"]
+            RDS[("Aurora PostgreSQL - Serverless v2")]
+            Redis[("ElastiCache Redis 7.0 - 2 nodes")]
         end
     end
-    SQS[["SQS Queue&lt;br/&gt;+ Dead Letter Queue"]]
+    SQS[["SQS Queue + DLQ"]]
     SNS[["SNS Topic"]]
-    DDB[("DynamoDB&lt;br/&gt;Audit Log, PITR")]
+    DDB[("DynamoDB - Audit Log")]
     SM["Secrets Manager"]
     Internet --> IGW --> ALB
     Internet --> APIGW
@@ -244,20 +244,20 @@ graph TD
     <h3>🔒 Security Zones</h3>
     <div class="mermaid">
 graph TB
-    subgraph PZ["Public Zone — Internet-facing"]
-        ALB["ALB&lt;br/&gt;SG: 80,443 from 0.0.0.0/0"]
-        APIGW["API Gateway&lt;br/&gt;IAM + Lambda Authorizer"]
+    subgraph PZ["Public Zone"]
+        ALB["ALB - Ports 80, 443 from 0.0.0.0/0"]
+        APIGW["API Gateway - IAM + Lambda Authorizer"]
     end
-    subgraph AZ["Application Zone — Private subnets"]
-        ECS["ECS Tasks&lt;br/&gt;SG: 8080 from ALB only"]
-        Lambda["Lambda Functions&lt;br/&gt;VPC-attached"]
+    subgraph AZ["Application Zone - Private subnets"]
+        ECS["ECS Tasks - Port 8080 from ALB only"]
+        Lambda["Lambda Functions - VPC-attached"]
     end
-    subgraph DZ["Data Zone — Encrypted at rest + in transit"]
-        RDS["Aurora PostgreSQL&lt;br/&gt;SG: 5432 from ECS only"]
-        Redis["Redis&lt;br/&gt;SG: 6379 from ECS only, TLS"]
-        DDB["DynamoDB&lt;br/&gt;SSE + PITR"]
+    subgraph DZ["Data Zone - Encrypted"]
+        RDS["Aurora PostgreSQL - Port 5432 from ECS only"]
+        Redis["Redis - Port 6379 from ECS only, TLS"]
+        DDB["DynamoDB - SSE + PITR"]
     end
-    subgraph SZ["Secrets &amp; IAM"]
+    subgraph SZ["Secrets and IAM"]
         SM["Secrets Manager"]
         IAM["IAM Roles — Least privilege"]
     end
@@ -305,12 +305,12 @@ graph LR
       <h3>Scenario 1: Infrastructure Diagram Generation</h3>
       <div class="mermaid">
 flowchart LR
-    A["Developer pushes&lt;br/&gt;IaC changes"] --> B["GitHub Action&lt;br/&gt;triggers"]
-    B --> C["Parse Terraform&lt;br/&gt;+ CloudFormation"]
-    C --> D["Amazon Bedrock&lt;br/&gt;analyzes resources"]
-    D --> E["Generate Mermaid&lt;br/&gt;diagrams"]
-    E --> F["Commit docs&lt;br/&gt;back to repo"]
-    D --> G["Post AI summary&lt;br/&gt;on PR"]
+    A["Developer pushes IaC changes"] --> B["GitHub Action triggers"]
+    B --> C["Parse Terraform + CloudFormation"]
+    C --> D["Amazon Bedrock analyzes resources"]
+    D --> E["Generate Mermaid diagrams"]
+    E --> F["Commit docs back to repo"]
+    D --> G["Post AI summary on PR"]
     style A fill:#e1f5fe,stroke:#0288d1
     style B fill:#f3e5f5,stroke:#7b1fa2
     style C fill:#fff3e0,stroke:#ef6c00
@@ -329,14 +329,14 @@ flowchart LR
       <h3>Scenario 2: Deployment Failure Troubleshooting</h3>
       <div class="mermaid">
 flowchart LR
-    A["Deployment&lt;br/&gt;fails"] --> B["GitHub Action&lt;br/&gt;triggers"]
-    B --> C["Collect ECS logs&lt;br/&gt;+ CFN events&lt;br/&gt;+ CloudWatch errors"]
-    B --> D["Fetch Wiz&lt;br/&gt;vulnerabilities"]
-    B --> E["Fetch Wiz&lt;br/&gt;runtime findings"]
-    C --> F["Amazon Bedrock&lt;br/&gt;agentic diagnosis"]
+    A["Deployment fails"] --> B["GitHub Action triggers"]
+    B --> C["Collect ECS logs, CFN events, CW errors"]
+    B --> D["Fetch Wiz vulnerabilities"]
+    B --> E["Fetch Wiz runtime findings"]
+    C --> F["Amazon Bedrock agentic diagnosis"]
     D --> F
     E --> F
-    F --> G["Create GitHub Issue&lt;br/&gt;with remediation plan"]
+    F --> G["Create GitHub Issue with remediation"]
     style A fill:#fce4ec,stroke:#c62828
     style B fill:#f3e5f5,stroke:#7b1fa2
     style C fill:#fff3e0,stroke:#ef6c00
@@ -356,15 +356,15 @@ flowchart LR
       <h3>Integration Architecture</h3>
       <div class="mermaid">
 graph TB
-    GH["GitHub Actions"] --> Parse["IaC Parser&lt;br/&gt;Terraform + CFN"]
-    GH --> Logs["AWS Log Collector&lt;br/&gt;ECS, CFN, CloudWatch"]
-    GH --> Wiz["Wiz API Client&lt;br/&gt;GraphQL"]
-    Parse --> Bedrock["Amazon Bedrock&lt;br/&gt;Claude 3.5 Sonnet"]
+    GH["GitHub Actions"] --> Parse["IaC Parser - Terraform + CFN"]
+    GH --> Logs["AWS Log Collector - ECS, CFN, CloudWatch"]
+    GH --> Wiz["Wiz API Client - GraphQL"]
+    Parse --> Bedrock["Amazon Bedrock - Claude 3.5 Sonnet"]
     Logs --> Bedrock
     Wiz --> Bedrock
-    Bedrock --> Diagrams["Mermaid Diagrams&lt;br/&gt;committed to repo"]
-    Bedrock --> Issues["GitHub Issues&lt;br/&gt;with remediation"]
-    Bedrock --> PRComments["PR Comments&lt;br/&gt;with change analysis"]
+    Bedrock --> Diagrams["Mermaid Diagrams committed to repo"]
+    Bedrock --> Issues["GitHub Issues with remediation"]
+    Bedrock --> PRComments["PR Comments with change analysis"]
     style GH fill:#f3e5f5,stroke:#7b1fa2
     style Bedrock fill:#e8f5e9,stroke:#2e7d32
     style Wiz fill:#e1f5fe,stroke:#0288d1
