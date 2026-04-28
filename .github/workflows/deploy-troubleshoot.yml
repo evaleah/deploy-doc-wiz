@@ -1,0 +1,194 @@
+###############################################################################
+# Workflow 2: AI-Powered Deployment Troubleshooting
+#
+# Triggered when a deployment fails. This workflow:
+#   1. Collects deployment logs and error context
+#   2. Pulls Wiz security findings (vulnerabilities + runtime issues)
+#   3. Sends everything to Amazon Bedrock for agentic diagnosis
+#   4. Posts a structured remediation plan as a GitHub Issue
+###############################################################################
+
+name: AI Deployment Troubleshooter
+
+on:
+  # Trigger on failed deployment workflows
+  workflow_run:
+    workflows: ["Deploy to Production", "Deploy to Staging"]
+    types: [completed]
+
+  # Manual trigger for ad-hoc troubleshooting
+  workflow_dispatch:
+    inputs:
+      deployment_id:
+        description: "Deployment ID or ECS service ARN to troubleshoot"
+        required: true
+      include_wiz:
+        description: "Include Wiz security findings in analysis"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  troubleshoot:
+    # Only run if the triggering workflow failed
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ---- Step 1: Collect deployment context ----
+      - name: Gather ECS deployment logs
+        id: ecs-logs
+        run: |
+          echo "Collecting ECS deployment events and task logs..."
+          node scripts/collect-ecs-logs.js \
+            --cluster lilly-portal-cluster \
+            --service lilly-portal-service \
+            --output /tmp/ecs-context.json
+
+      - name: Gather CloudFormation events
+        id: cfn-events
+        run: |
+          echo "Collecting recent CloudFormation stack events..."
+          node scripts/collect-cfn-events.js \
+            --stack-name lilly-portal-api \
+            --output /tmp/cfn-context.json
+
+      - name: Gather CloudWatch error logs
+        id: cw-logs
+        run: |
+          echo "Pulling recent error logs from CloudWatch..."
+          node scripts/collect-cloudwatch-errors.js \
+            --log-groups "/ecs/lilly-portal,/aws/apigateway/lilly-portal" \
+            --hours 2 \
+            --output /tmp/cw-errors.json
+
+      # ---- Step 2: Pull Wiz security findings ----
+      - name: Fetch Wiz vulnerability findings
+        id: wiz-vulns
+        if: >
+          github.event_name == 'workflow_dispatch' && github.event.inputs.include_wiz == 'true' ||
+          github.event_name != 'workflow_dispatch'
+        run: |
+          echo "Querying Wiz API for vulnerability findings..."
+          node scripts/wiz-fetch-vulnerabilities.js \
+            --project-id "${{ secrets.WIZ_PROJECT_ID }}" \
+            --output /tmp/wiz-vulns.json
+        env:
+          WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
+          WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
+          WIZ_API_URL: ${{ secrets.WIZ_API_URL }}
+
+      - name: Fetch Wiz runtime findings
+        id: wiz-runtime
+        if: >
+          github.event_name == 'workflow_dispatch' && github.event.inputs.include_wiz == 'true' ||
+          github.event_name != 'workflow_dispatch'
+        run: |
+          echo "Querying Wiz API for runtime security findings..."
+          node scripts/wiz-fetch-runtime.js \
+            --project-id "${{ secrets.WIZ_PROJECT_ID }}" \
+            --output /tmp/wiz-runtime.json
+        env:
+          WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
+          WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
+          WIZ_API_URL: ${{ secrets.WIZ_API_URL }}
+
+      # ---- Step 3: AI-powered diagnosis via Bedrock ----
+      - name: Agentic AI diagnosis via Amazon Bedrock
+        id: diagnosis
+        run: |
+          echo "Sending context to Amazon Bedrock for agentic diagnosis..."
+          node scripts/bedrock-troubleshoot.js \
+            --ecs-context /tmp/ecs-context.json \
+            --cfn-context /tmp/cfn-context.json \
+            --cw-errors /tmp/cw-errors.json \
+            --wiz-vulns /tmp/wiz-vulns.json \
+            --wiz-runtime /tmp/wiz-runtime.json \
+            --infra-dir infra/ \
+            --output /tmp/diagnosis.json
+
+      # ---- Step 4: Create GitHub Issue with diagnosis ----
+      - name: Create troubleshooting issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const diagnosis = JSON.parse(fs.readFileSync('/tmp/diagnosis.json', 'utf8'));
+
+            const severityIcon = {
+              critical: '🔴',
+              high: '🟠',
+              medium: '🟡',
+              low: '🟢'
+            };
+
+            let body = `## 🤖 AI Deployment Troubleshooting Report
+
+            **Deployment:** ${diagnosis.deployment_id}
+            **Time:** ${diagnosis.timestamp}
+            **Overall Severity:** ${severityIcon[diagnosis.severity]} ${diagnosis.severity.toUpperCase()}
+
+            ---
+
+            ### 📋 Root Cause Analysis
+            ${diagnosis.root_cause}
+
+            ### 🔧 Recommended Fix
+            ${diagnosis.recommended_fix}
+
+            ### 📝 Step-by-Step Remediation
+            ${diagnosis.remediation_steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+            `;
+
+            if (diagnosis.wiz_findings && diagnosis.wiz_findings.length > 0) {
+              body += `\n\n### 🛡️ Related Wiz Security Findings\n`;
+              body += `| Severity | Finding | Resource | Recommendation |\n`;
+              body += `|----------|---------|----------|----------------|\n`;
+              diagnosis.wiz_findings.forEach(f => {
+                body += `| ${severityIcon[f.severity]} ${f.severity} | ${f.title} | ${f.resource} | ${f.recommendation} |\n`;
+              });
+            }
+
+            if (diagnosis.wiz_runtime && diagnosis.wiz_runtime.length > 0) {
+              body += `\n\n### 🔍 Wiz Runtime Findings\n`;
+              body += `| Type | Detail | Risk | Action |\n`;
+              body += `|------|--------|------|--------|\n`;
+              diagnosis.wiz_runtime.forEach(f => {
+                body += `| ${f.type} | ${f.detail} | ${severityIcon[f.risk]} ${f.risk} | ${f.action} |\n`;
+              });
+            }
+
+            body += `\n\n### 📊 Deployment Logs (Key Excerpts)\n\`\`\`\n${diagnosis.log_excerpts}\n\`\`\``;
+
+            body += `\n\n---\n*Generated by AI Deployment Troubleshooter • Amazon Bedrock (Claude) + Wiz Integration*\n`;
+            body += `*Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}*`;
+
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🤖 Deployment Failure Analysis: ${diagnosis.short_summary}`,
+              body: body,
+              labels: ['deployment-failure', 'ai-diagnosis', diagnosis.severity]
+            });

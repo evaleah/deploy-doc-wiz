@@ -1,0 +1,16 @@
+{
+  "name": "deploy-iq",
+  "version": "1.0.0",
+  "description": "AI-Powered Infrastructure Intelligence — automatic diagrams + deployment troubleshooting using Amazon Bedrock, Wiz, and GitHub Actions",
+  "scripts": {
+    "parse-tf": "node scripts/parse-terraform.js infra/terraform",
+    "parse-cfn": "node scripts/parse-cloudformation.js infra/cloudformation",
+    "generate-diagrams": "node scripts/generate-infra-diagrams.js",
+    "analyze": "node scripts/bedrock-analyze.js",
+    "troubleshoot": "node scripts/bedrock-troubleshoot.js"
+  },
+  "keywords": ["infrastructure", "diagrams", "bedrock", "wiz", "github-actions", "terraform", "cloudformation"],
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

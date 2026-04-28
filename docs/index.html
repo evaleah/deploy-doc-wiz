@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeployIQ — AI-Powered Infrastructure Intelligence</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg:#0d1117; --surface:#161b22; --surface-2:#1c2129;
+      --border:#30363d; --text:#e6edf3; --muted:#8b949e;
+      --accent:#58a6ff; --green:#3fb950; --orange:#d29922;
+      --purple:#bc8cff; --red:#f85149; --radius:8px;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+    .header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+    .header h1{font-size:20px;font-weight:600;display:flex;align-items:center;gap:10px;}
+    .badges{display:flex;gap:8px;}
+    .badge{font-size:11px;padding:2px 8px;border-radius:12px;font-weight:500;}
+    .badge-green{background:rgba(63,185,80,.15);color:var(--green);}
+    .badge-blue{background:rgba(88,166,255,.15);color:var(--accent);}
+    .badge-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+    .tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;overflow-x:auto;}
+    .tab{padding:12px 20px;cursor:pointer;color:var(--muted);font-size:14px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;user-select:none;white-space:nowrap;}
+    .tab:hover{color:var(--text);}
+    .tab.active{color:var(--text);border-bottom-color:var(--accent);}
+    .main{padding:24px;max-width:1400px;margin:0 auto;}
+    .tab-content{display:none;}
+    .tab-content.active{display:block;}
+    .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;}
+    .panel-hdr{padding:12px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;}
+    .panel-body{padding:16px;overflow-y:auto;}
+    pre{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.5;font-family:'SFMono-Regular',Consolas,monospace;}
+    code{font-family:'SFMono-Regular',Consolas,monospace;font-size:13px;}
+    .code-inline{background:rgba(110,118,129,.2);padding:2px 6px;border-radius:4px;font-size:12px;}
+    .kw{color:var(--red);}.str{color:#a5d6ff;}.cmt{color:var(--muted);font-style:italic;}.fn{color:#d2a8ff;}.type{color:var(--orange);}
+    .btn{border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px;}
+    .btn:hover{filter:brightness(1.1);}
+    .btn:disabled{opacity:.6;cursor:not-allowed;}
+    .btn-green{background:var(--green);color:#000;}
+    .btn-orange{background:var(--orange);color:#000;}
+    .btn-blue{background:var(--accent);color:#000;}
+    .btn.running{animation:pulse 1s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.7;}}
+    .pipeline{display:flex;align-items:center;gap:0;margin:24px 0;flex-wrap:wrap;justify-content:center;}
+    .pipeline-step{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;transition:all .4s;min-width:140px;}
+    .pipeline-step .step-icon{font-size:20px;width:28px;text-align:center;}
+    .pipeline-step .step-label{font-weight:500;}
+    .pipeline-step .step-status{font-size:11px;color:var(--muted);margin-top:2px;}
+    .pipeline-step.active{border-color:var(--accent);background:rgba(88,166,255,.08);}
+    .pipeline-step.done{border-color:var(--green);background:rgba(63,185,80,.08);}
+    .pipeline-step.done .step-status{color:var(--green);}
+    .pipeline-step.fail{border-color:var(--red);background:rgba(248,81,73,.08);}
+    .pipeline-step.fail .step-status{color:var(--red);}
+    .pipeline-arrow{color:var(--muted);font-size:20px;padding:0 4px;}
+    .log-output{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:16px;font-family:'SFMono-Regular',Consolas,monospace;font-size:13px;line-height:1.8;max-height:220px;overflow-y:auto;margin-top:16px;}
+    .log-line{opacity:0;animation:fadeIn .3s forwards;}
+    @keyframes fadeIn{to{opacity:1;}}
+    .log-ok{color:var(--green);}.log-info{color:var(--accent);}.log-warn{color:var(--orange);}.log-err{color:var(--red);}
+    .mermaid{background:#fff;border-radius:6px;padding:20px;text-align:center;}
+    .diagram-section{margin:20px 0;padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);}
+    .diagram-section h3{font-size:16px;margin-bottom:16px;}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+    .issue-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:20px;}
+    .issue-card h3{font-size:16px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+    .issue-card table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0;}
+    .issue-card th,.issue-card td{padding:8px 12px;border:1px solid var(--border);text-align:left;}
+    .issue-card th{background:var(--surface-2);font-weight:600;}
+    .severity-critical{color:var(--red);font-weight:600;}
+    .severity-high{color:var(--orange);font-weight:600;}
+    .severity-medium{color:var(--orange);}
+    .severity-low{color:var(--green);}
+    .step-list{list-style:none;counter-reset:steps;}
+    .step-list li{counter-increment:steps;padding:8px 0 8px 36px;position:relative;color:var(--muted);}
+    .step-list li::before{content:counter(steps);position:absolute;left:0;width:24px;height:24px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);text-align:center;line-height:24px;font-size:12px;font-weight:600;color:var(--text);}
+    @media(max-width:900px){.split{grid-template-columns:1fr;}.pipeline{flex-direction:column;}.pipeline-arrow{transform:rotate(90deg);}}
+  </style>
+</head>
+<body>
+<div class="header">
+  <h1>🔍 DeployIQ — Infrastructure Intelligence</h1>
+  <div class="badges">
+    <span class="badge badge-green">Amazon Bedrock</span>
+    <span class="badge badge-purple">Wiz Integration</span>
+    <span class="badge badge-blue">GitHub Actions</span>
+  </div>
+</div>
+<div class="tabs">
+  <div class="tab active" data-tab="scenario1">🏗️ Scenario 1: Infra Diagrams</div>
+  <div class="tab" data-tab="scenario2">🔥 Scenario 2: Failure Troubleshooting</div>
+  <div class="tab" data-tab="arch">📐 Generated Diagrams</div>
+  <div class="tab" data-tab="how">❓ How It Works</div>
+</div>
+<div class="main">
+<!-- ==================== SCENARIO 1: INFRA DIAGRAMS ==================== -->
+<div class="tab-content active" id="tab-scenario1">
+  <div style="text-align:center;margin-bottom:24px;">
+    <h2 style="font-size:24px;margin-bottom:8px;">Automatic Infrastructure Diagrams on Every Commit</h2>
+    <p style="color:var(--muted);">Push a Terraform or CloudFormation change → GitHub Action parses IaC → Bedrock generates AI summary → Mermaid diagrams committed to repo</p>
+  </div>
+  <div class="pipeline" id="pipe1">
+    <div class="pipeline-step" id="s1-push"><div class="step-icon">📦</div><div><div class="step-label">Git Push</div><div class="step-status">Waiting</div></div></div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step" id="s1-parse"><div class="step-icon">🔍</div><div><div class="step-label">Parse IaC</div><div class="step-status">Waiting</div></div></div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step" id="s1-bedrock"><div class="step-icon">🧠</div><div><div class="step-label">Bedrock AI</div><div class="step-status">Waiting</div></div></div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step" id="s1-diagram"><div class="step-icon">📐</div><div><div class="step-label">Diagrams</div><div class="step-status">Waiting</div></div></div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step" id="s1-commit"><div class="step-icon">✅</div><div><div class="step-label">Commit Docs</div><div class="step-status">Waiting</div></div></div>
+  </div>
+  <div style="text-align:center;margin:20px 0;">
+    <button class="btn btn-green" id="btn-s1" onclick="runScenario1()"><span>▶</span> Simulate: Push Terraform Change</button>
+  </div>
+  <div class="log-output" id="log-s1" style="display:none;"></div>
+  <div id="s1-result" style="display:none;margin-top:20px;">
+    <div class="split">
+      <div class="panel">
+        <div class="panel-hdr"><span>📝 Terraform Change</span><span class="badge badge-blue">infra/terraform/main.tf</span></div>
+        <div class="panel-body" style="font-family:monospace;font-size:13px;line-height:1.6;" id="s1-diff"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-hdr"><span>🧠 AI Analysis (Amazon Bedrock)</span><span class="badge badge-green">Claude</span></div>
+        <div class="panel-body" id="s1-analysis"></div>
+      </div>
+    </div>
+    <div class="diagram-section">
+      <h3>📐 Auto-Generated Network Topology</h3>
+      <div class="mermaid" id="s1-diagram-render">
+graph TD
+    Internet((Internet))
+    IGW[Internet Gateway]
+    ALB["ALB :443"]
+    APIGW[API Gateway]
+    subgraph VPC["VPC 10.0.0.0/16"]
+        subgraph Public["Public Subnets"]
+            ALB
+            NAT[NAT Gateway]
+        end
+        subgraph Private["Private Subnets"]
+            ECS["ECS Fargate — 3 Tasks"]
+            Lambda1["Lambda: Authorizer"]
+            Lambda2["Lambda: Processor"]
+            RDS[("Aurora PostgreSQL")]
+            Redis[("Redis Cluster")]
+        end
+    end
+    SQS[[SQS Queue]]
+    DDB[("DynamoDB")]
+    Internet --> IGW --> ALB
+    Internet --> APIGW
+    ALB --> ECS
+    APIGW --> Lambda1
+    APIGW --> Lambda2
+    ECS --> RDS
+    ECS --> Redis
+    Lambda2 --> SQS
+    Lambda2 --> DDB
+    ECS -.-> NAT --> Internet
+    style VPC fill:#e1f5fe,stroke:#0288d1
+    style Public fill:#fff3e0,stroke:#ef6c00
+    style Private fill:#e8f5e9,stroke:#2e7d32
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENARIO 2: TROUBLESHOOTING ==================== -->
+<div class="tab-content" id="tab-scenario2">
+  <div style="text-align:center;margin-bottom:24px;">
+    <h2 style="font-size:24px;margin-bottom:8px;">AI-Powered Deployment Failure Troubleshooting</h2>
+    <p style="color:var(--muted);">Deployment fails → Collect logs + Wiz findings → Bedrock diagnoses root cause → GitHub Issue with remediation plan</p>
+  </div>
+  <div class="pipeline" id="pipe2">
+    <div class="pipeline-step fail" id="s2-deploy"><div class="step-icon">💥</div><div><div class="step-label">Deploy Fails</div><div class="step-status">ECS health check failed</div></div></div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step" id="s2-logs"><div class="step-icon">📋</div><div><div class="step-label">Collect Logs</div><div class="step-status">Waiting</div></div></div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step" id="s2-wiz"><div class="step-icon">🛡️</div><div><div class="step-label">Wiz Findings</div><div class="step-status">Waiting</div></div></div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step" id="s2-bedrock"><div class="step-icon">🧠</div><div><div class="step-label">Bedrock AI</div><div class="step-status">Waiting</div></div></div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step" id="s2-issue"><div class="step-icon">📝</div><div><div class="step-label">GitHub Issue</div><div class="step-status">Waiting</div></div></div>
+  </div>
+  <div style="text-align:center;margin:20px 0;">
+    <button class="btn btn-orange" id="btn-s2" onclick="runScenario2()"><span>▶</span> Simulate: Deployment Failure</button>
+  </div>
+  <div class="log-output" id="log-s2" style="display:none;"></div>
+  <div id="s2-result" style="display:none;"></div>
+</div>
+
+<!-- ==================== ARCHITECTURE DIAGRAMS ==================== -->
+<div class="tab-content" id="tab-arch">
+  <div class="diagram-section">
+    <h3>🏗️ Network Topology (from Terraform + CloudFormation)</h3>
+    <div class="mermaid">
+graph TD
+    Internet((Internet))
+    IGW[Internet Gateway]
+    ALB["Application Load Balancer&lt;br/&gt;HTTPS :443"]
+    APIGW["API Gateway&lt;br/&gt;HTTP API"]
+    subgraph VPC["VPC 10.0.0.0/16"]
+        subgraph Public["Public Subnets (10.0.1.0/24, 10.0.2.0/24)"]
+            ALB
+            NAT[NAT Gateway]
+        end
+        subgraph Private["Private Subnets (10.0.10.0/24, 10.0.11.0/24)"]
+            ECS["ECS Fargate&lt;br/&gt;3 Tasks, 512 CPU, 1024 MB"]
+            Lambda1["Lambda: Authorizer&lt;br/&gt;Python 3.12, 256 MB"]
+            Lambda2["Lambda: Data Processor&lt;br/&gt;Python 3.12, 512 MB"]
+            Lambda3["Lambda: Notifications&lt;br/&gt;Python 3.12, 256 MB"]
+            RDS[("Aurora PostgreSQL&lt;br/&gt;Serverless v2, 0.5-8 ACU&lt;br/&gt;Encrypted")]
+            Redis[("ElastiCache Redis 7.0&lt;br/&gt;2-node, TLS enabled")]
+        end
+    end
+    SQS[["SQS Queue&lt;br/&gt;+ Dead Letter Queue"]]
+    SNS[["SNS Topic"]]
+    DDB[("DynamoDB&lt;br/&gt;Audit Log, PITR")]
+    SM["Secrets Manager"]
+    Internet --> IGW --> ALB
+    Internet --> APIGW
+    ALB --> ECS
+    APIGW --> Lambda1
+    APIGW --> Lambda2
+    APIGW --> Lambda3
+    ECS --> RDS
+    ECS --> Redis
+    ECS --> SM
+    Lambda2 --> SQS
+    Lambda2 --> DDB
+    Lambda3 --> SNS
+    SQS -.-> |"3 retries"| DDB
+    ECS -.-> NAT --> Internet
+    style VPC fill:#e1f5fe,stroke:#0288d1
+    style Public fill:#fff3e0,stroke:#ef6c00
+    style Private fill:#e8f5e9,stroke:#2e7d32
+    style RDS fill:#fce4ec,stroke:#c62828
+    style Redis fill:#fce4ec,stroke:#c62828
+    style DDB fill:#fce4ec,stroke:#c62828
+    </div>
+  </div>
+  <div class="diagram-section">
+    <h3>🔒 Security Zones</h3>
+    <div class="mermaid">
+graph TB
+    subgraph PZ["Public Zone — Internet-facing"]
+        ALB["ALB&lt;br/&gt;SG: 80,443 from 0.0.0.0/0"]
+        APIGW["API Gateway&lt;br/&gt;IAM + Lambda Authorizer"]
+    end
+    subgraph AZ["Application Zone — Private subnets"]
+        ECS["ECS Tasks&lt;br/&gt;SG: 8080 from ALB only"]
+        Lambda["Lambda Functions&lt;br/&gt;VPC-attached"]
+    end
+    subgraph DZ["Data Zone — Encrypted at rest + in transit"]
+        RDS["Aurora PostgreSQL&lt;br/&gt;SG: 5432 from ECS only"]
+        Redis["Redis&lt;br/&gt;SG: 6379 from ECS only, TLS"]
+        DDB["DynamoDB&lt;br/&gt;SSE + PITR"]
+    end
+    subgraph SZ["Secrets &amp; IAM"]
+        SM["Secrets Manager"]
+        IAM["IAM Roles — Least privilege"]
+    end
+    PZ --> AZ --> DZ
+    AZ --> SZ
+    style PZ fill:#fff3e0,stroke:#ef6c00
+    style AZ fill:#e1f5fe,stroke:#0288d1
+    style DZ fill:#e8f5e9,stroke:#2e7d32
+    style SZ fill:#f3e5f5,stroke:#7b1fa2
+    </div>
+  </div>
+  <div class="diagram-section">
+    <h3>🔗 Service Dependencies</h3>
+    <div class="mermaid">
+graph LR
+    Client[Client] --> ALB[ALB :443]
+    Client --> APIGW[API Gateway]
+    ALB --> ECS[ECS Fargate]
+    APIGW --> Auth[Lambda Authorizer]
+    APIGW --> Proc[Lambda Processor]
+    APIGW --> Notif[Lambda Notifications]
+    ECS --> Aurora[(Aurora)]
+    ECS --> Redis[(Redis)]
+    ECS --> SM[Secrets Manager]
+    Proc --> SQS[SQS]
+    Proc --> DDB[(DynamoDB)]
+    SQS --> DLQ[DLQ]
+    Notif --> SNS[SNS]
+    style ECS fill:#fff3e0,stroke:#ef6c00
+    style Auth fill:#fff3e0,stroke:#ef6c00
+    style Proc fill:#fff3e0,stroke:#ef6c00
+    style Notif fill:#fff3e0,stroke:#ef6c00
+    style Aurora fill:#e8f5e9,stroke:#2e7d32
+    style Redis fill:#e8f5e9,stroke:#2e7d32
+    style DDB fill:#e8f5e9,stroke:#2e7d32
+    </div>
+  </div>
+</div>
+
+<!-- ==================== HOW IT WORKS ==================== -->
+<div class="tab-content" id="tab-how">
+  <div style="max-width:900px;margin:0 auto;">
+    <h2 style="font-size:24px;margin-bottom:24px;">How It Works</h2>
+    <div class="diagram-section">
+      <h3>Scenario 1: Infrastructure Diagram Generation</h3>
+      <div class="mermaid">
+flowchart LR
+    A["Developer pushes&lt;br/&gt;IaC changes"] --> B["GitHub Action&lt;br/&gt;triggers"]
+    B --> C["Parse Terraform&lt;br/&gt;+ CloudFormation"]
+    C --> D["Amazon Bedrock&lt;br/&gt;analyzes resources"]
+    D --> E["Generate Mermaid&lt;br/&gt;diagrams"]
+    E --> F["Commit docs&lt;br/&gt;back to repo"]
+    D --> G["Post AI summary&lt;br/&gt;on PR"]
+    style A fill:#e1f5fe,stroke:#0288d1
+    style B fill:#f3e5f5,stroke:#7b1fa2
+    style C fill:#fff3e0,stroke:#ef6c00
+    style D fill:#e8f5e9,stroke:#2e7d32
+    style E fill:#e8f5e9,stroke:#2e7d32
+    style F fill:#e8f5e9,stroke:#2e7d32
+    style G fill:#e8f5e9,stroke:#2e7d32
+      </div>
+      <div style="margin-top:16px;">
+        <p style="color:var(--muted);margin:8px 0;"><strong style="color:var(--text);">IaC Parsing:</strong> Scripts extract resource types, names, and relationships from <code class="code-inline">.tf</code> and CloudFormation YAML files. In production, <code class="code-inline">terraform show -json</code> gives the full resource graph from state.</p>
+        <p style="color:var(--muted);margin:8px 0;"><strong style="color:var(--text);">Bedrock Analysis:</strong> The parsed resources + git diff are sent to Claude via the Bedrock API. The AI produces a human-readable summary, risk assessment, and diagram annotations.</p>
+        <p style="color:var(--muted);margin:8px 0;"><strong style="color:var(--text);">Diagram Generation:</strong> Mermaid diagrams are generated showing network topology, security zones, and service dependencies. GitHub renders these natively in Markdown.</p>
+      </div>
+    </div>
+    <div class="diagram-section">
+      <h3>Scenario 2: Deployment Failure Troubleshooting</h3>
+      <div class="mermaid">
+flowchart LR
+    A["Deployment&lt;br/&gt;fails"] --> B["GitHub Action&lt;br/&gt;triggers"]
+    B --> C["Collect ECS logs&lt;br/&gt;+ CFN events&lt;br/&gt;+ CloudWatch errors"]
+    B --> D["Fetch Wiz&lt;br/&gt;vulnerabilities"]
+    B --> E["Fetch Wiz&lt;br/&gt;runtime findings"]
+    C --> F["Amazon Bedrock&lt;br/&gt;agentic diagnosis"]
+    D --> F
+    E --> F
+    F --> G["Create GitHub Issue&lt;br/&gt;with remediation plan"]
+    style A fill:#fce4ec,stroke:#c62828
+    style B fill:#f3e5f5,stroke:#7b1fa2
+    style C fill:#fff3e0,stroke:#ef6c00
+    style D fill:#e1f5fe,stroke:#0288d1
+    style E fill:#e1f5fe,stroke:#0288d1
+    style F fill:#e8f5e9,stroke:#2e7d32
+    style G fill:#e8f5e9,stroke:#2e7d32
+      </div>
+      <div style="margin-top:16px;">
+        <p style="color:var(--muted);margin:8px 0;"><strong style="color:var(--text);">Log Collection:</strong> ECS deployment events, CloudFormation stack events, and CloudWatch error logs are gathered automatically.</p>
+        <p style="color:var(--muted);margin:8px 0;"><strong style="color:var(--text);">Wiz Integration:</strong> The Wiz GraphQL API is queried for both vulnerability findings (CVEs in images, misconfigurations) and runtime findings (anomalous network activity, resource abuse, drift detection).</p>
+        <p style="color:var(--muted);margin:8px 0;"><strong style="color:var(--text);">Agentic Diagnosis:</strong> All context is sent to Bedrock. The AI can request additional context in a loop (e.g., "show me the task definition") until it has enough information to produce a root cause analysis.</p>
+        <p style="color:var(--muted);margin:8px 0;"><strong style="color:var(--text);">Remediation:</strong> A structured GitHub Issue is created with root cause, step-by-step fix, related Wiz findings, and log excerpts.</p>
+      </div>
+    </div>
+    <div class="diagram-section">
+      <h3>Integration Architecture</h3>
+      <div class="mermaid">
+graph TB
+    GH["GitHub Actions"] --> Parse["IaC Parser&lt;br/&gt;Terraform + CFN"]
+    GH --> Logs["AWS Log Collector&lt;br/&gt;ECS, CFN, CloudWatch"]
+    GH --> Wiz["Wiz API Client&lt;br/&gt;GraphQL"]
+    Parse --> Bedrock["Amazon Bedrock&lt;br/&gt;Claude 3.5 Sonnet"]
+    Logs --> Bedrock
+    Wiz --> Bedrock
+    Bedrock --> Diagrams["Mermaid Diagrams&lt;br/&gt;committed to repo"]
+    Bedrock --> Issues["GitHub Issues&lt;br/&gt;with remediation"]
+    Bedrock --> PRComments["PR Comments&lt;br/&gt;with change analysis"]
+    style GH fill:#f3e5f5,stroke:#7b1fa2
+    style Bedrock fill:#e8f5e9,stroke:#2e7d32
+    style Wiz fill:#e1f5fe,stroke:#0288d1
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function animateStep(stepId, logs, logEl) {
+  const el = document.getElementById(stepId);
+  el.classList.add('active');
+  el.querySelector('.step-status').textContent = 'Running...';
+  for (const line of logs) {
+    await sleep(250 + Math.random() * 350);
+    const div = document.createElement('div');
+    div.className = 'log-line ' + (line.cls || '');
+    div.textContent = line.text;
+    logEl.appendChild(div);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  await sleep(300);
+  el.classList.remove('active');
+  el.classList.add('done');
+  el.querySelector('.step-status').textContent = 'Complete ✓';
+}
+
+// ==================== SCENARIO 1 ====================
+async function runScenario1() {
+  const btn = document.getElementById('btn-s1');
+  const log = document.getElementById('log-s1');
+  const result = document.getElementById('s1-result');
+  btn.disabled = true; btn.classList.add('running'); btn.innerHTML = '⏳ Running...';
+  log.style.display = 'block'; log.innerHTML = ''; result.style.display = 'none';
+  ['s1-push','s1-parse','s1-bedrock','s1-diagram','s1-commit'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('active','done');
+    el.querySelector('.step-status').textContent = 'Waiting';
+  });
+
+  await animateStep('s1-push', [
+    {text:'📦 git push origin main',cls:''},
+    {text:'   Changed: infra/terraform/main.tf (+12 -2)',cls:'log-info'},
+    {text:'   ✓ Push successful',cls:'log-ok'}
+  ], log);
+
+  await animateStep('s1-parse', [
+    {text:'🔍 Parsing infra/terraform/*.tf ...',cls:'log-info'},
+    {text:'   Found 28 Terraform resources',cls:''},
+    {text:'🔍 Parsing infra/cloudformation/*.yaml ...',cls:'log-info'},
+    {text:'   Found 12 CloudFormation resources',cls:''},
+    {text:'   Extracted 15 resource relationships',cls:''}
+  ], log);
+
+  await animateStep('s1-bedrock', [
+    {text:'🧠 Calling Amazon Bedrock (Claude 3.5 Sonnet)...',cls:'log-warn'},
+    {text:'   Prompt: 40 resources + git diff (14 lines changed)',cls:''},
+    {text:'   Model: anthropic.claude-3-5-sonnet-20241022-v2:0',cls:''},
+    {text:'   Analyzing infrastructure topology...',cls:''},
+    {text:'   Generating risk assessment...',cls:''},
+    {text:'   ✓ AI analysis complete (1.8s, 1,247 tokens)',cls:'log-ok'}
+  ], log);
+
+  await animateStep('s1-diagram', [
+    {text:'📐 Generating Mermaid diagrams...',cls:'log-info'},
+    {text:'   → Network topology diagram',cls:''},
+    {text:'   → Security zones diagram',cls:''},
+    {text:'   → Service dependency graph',cls:''},
+    {text:'   ✓ docs/INFRASTRUCTURE.md updated',cls:'log-ok'}
+  ], log);
+
+  await animateStep('s1-commit', [
+    {text:'📦 git add docs/',cls:''},
+    {text:'📦 git commit -m "docs: auto-generate infrastructure diagrams"',cls:''},
+    {text:'📦 git push',cls:''},
+    {text:'   ✓ Documentation committed!',cls:'log-ok'}
+  ], log);
+
+  await sleep(400);
+  result.style.display = 'block';
+  document.getElementById('s1-diff').innerHTML = getDiffHtml();
+  document.getElementById('s1-analysis').innerHTML = getAnalysisHtml();
+  btn.disabled = false; btn.classList.remove('running'); btn.innerHTML = '<span>▶</span> Run Again';
+}
+
+function getDiffHtml() {
+  return '<div style="font-size:13px;line-height:1.7;">'
+    + '<div style="color:var(--purple);font-weight:600;padding:4px 0;">@@ infra/terraform/main.tf — ECS Task Definition @@</div>'
+    + '<div style="color:var(--muted);">   resource "aws_ecs_task_definition" "app" {</div>'
+    + '<div style="color:var(--muted);">     family = "${var.app_name}-task"</div>'
+    + '<div style="background:rgba(248,81,73,.12);color:var(--red);">-    cpu    = "512"</div>'
+    + '<div style="background:rgba(248,81,73,.12);color:var(--red);">-    memory = "1024"</div>'
+    + '<div style="background:rgba(63,185,80,.12);color:var(--green);">+    cpu    = "1024"</div>'
+    + '<div style="background:rgba(63,185,80,.12);color:var(--green);">+    memory = "2048"</div>'
+    + '<div style="color:var(--muted);">     ...</div>'
+    + '<div style="color:var(--muted);">     container_definitions = jsonencode([{</div>'
+    + '<div style="color:var(--muted);">       name  = "app"</div>'
+    + '<div style="background:rgba(248,81,73,.12);color:var(--red);">-      image = "${var.ecr_repo_url}:latest"</div>'
+    + '<div style="background:rgba(63,185,80,.12);color:var(--green);">+      image = "${var.ecr_repo_url}:v2.4.1"</div>'
+    + '<div style="color:var(--muted);">       portMappings = [{ containerPort = 8080 }]</div>'
+    + '<div style="color:var(--muted);">     ...</div>'
+    + '<div style="background:rgba(63,185,80,.12);color:var(--green);">+    # Added health check grace period</div>'
+    + '<div style="background:rgba(63,185,80,.12);color:var(--green);">+    health_check_grace_period_seconds = 60</div>'
+    + '</div>';
+}
+
+function getAnalysisHtml() {
+  return '<div style="font-size:14px;line-height:1.7;">'
+    + '<p style="margin-bottom:12px;"><strong>Summary:</strong> This change doubles the ECS task resources (512→1024 CPU, 1024→2048 MB memory), pins the container image to v2.4.1, and adds a 60-second health check grace period.</p>'
+    + '<p style="margin-bottom:16px;color:var(--muted);">Impact: ECS will perform a rolling deployment. No downtime expected. Cost increase ~$45/month for the additional compute.</p>'
+    + '<h4 style="margin-bottom:8px;">Risk Assessment</h4>'
+    + '<div style="margin-bottom:6px;">🟢 <strong>LOW</strong> — Image pinned to specific version (good practice, was using :latest)</div>'
+    + '<div style="margin-bottom:6px;">🟢 <strong>LOW</strong> — Health check grace period prevents premature task termination during startup</div>'
+    + '<div style="margin-bottom:6px;">🟡 <strong>MEDIUM</strong> — Memory doubled — verify application actually needs 2 GB or consider right-sizing after monitoring</div>'
+    + '</div>';
+}
+
+// ==================== SCENARIO 2 ====================
+async function runScenario2() {
+  const btn = document.getElementById('btn-s2');
+  const log = document.getElementById('log-s2');
+  const result = document.getElementById('s2-result');
+  btn.disabled = true; btn.classList.add('running'); btn.innerHTML = '⏳ Diagnosing...';
+  log.style.display = 'block'; log.innerHTML = ''; result.style.display = 'none';
+  ['s2-logs','s2-wiz','s2-bedrock','s2-issue'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('active','done');
+    el.querySelector('.step-status').textContent = 'Waiting';
+  });
+
+  await animateStep('s2-logs', [
+    {text:'📋 Collecting ECS deployment events...',cls:'log-info'},
+    {text:'   → service unable to place task (health check failed)',cls:'log-err'},
+    {text:'   → Container killed: OOMKilled (1024MB exceeded)',cls:'log-err'},
+    {text:'   → Exit code: 137 (SIGKILL)',cls:'log-err'},
+    {text:'📋 Collecting CloudWatch error logs...',cls:'log-info'},
+    {text:'   → 47 error entries in last 2 hours',cls:'log-warn'},
+    {text:'   → Pattern: memory allocation failures',cls:''}
+  ], log);
+
+  await animateStep('s2-wiz', [
+    {text:'🛡️ Querying Wiz API for vulnerabilities...',cls:'log-info'},
+    {text:'   → 🔴 CRITICAL: CVE-2026-1234 in node:20-slim (RCE)',cls:'log-err'},
+    {text:'   → 🟠 HIGH: CVE-2026-5678 kernel privilege escalation',cls:'log-warn'},
+    {text:'🛡️ Querying Wiz API for runtime findings...',cls:'log-info'},
+    {text:'   → 🔴 Anomalous outbound connection to 198.51.100.42:4444',cls:'log-err'},
+    {text:'   → 🔴 Memory at 95% of limit for >10 minutes',cls:'log-err'},
+    {text:'   → 🟡 Process accessed /etc/shadow',cls:'log-warn'},
+    {text:'   → 🟡 Security group drift detected (SSH port open)',cls:'log-warn'}
+  ], log);
+
+  await animateStep('s2-bedrock', [
+    {text:'🧠 Sending to Amazon Bedrock for agentic diagnosis...',cls:'log-warn'},
+    {text:'   Context: ECS logs + CFN events + 47 CW errors + 2 Wiz vulns + 4 runtime findings',cls:''},
+    {text:'   Agent: "I need the ECS task definition details"',cls:'log-info'},
+    {text:'   → Fetching task definition... provided',cls:''},
+    {text:'   Agent: "I need the security group rules for the ECS service"',cls:'log-info'},
+    {text:'   → Fetching SG rules... provided',cls:''},
+    {text:'   Agent: Correlating OOM with Wiz runtime memory finding...',cls:''},
+    {text:'   Agent: Correlating CVE-2026-1234 with anomalous network activity...',cls:''},
+    {text:'   ✓ Root cause identified (2 contributing factors)',cls:'log-ok'}
+  ], log);
+
+  await animateStep('s2-issue', [
+    {text:'📝 Creating GitHub Issue with diagnosis...',cls:'log-info'},
+    {text:'   Title: "🤖 Deployment Failure: ECS OOM + Wiz CVE in base image"',cls:''},
+    {text:'   Labels: deployment-failure, ai-diagnosis, high',cls:''},
+    {text:'   ✓ Issue #142 created',cls:'log-ok'}
+  ], log);
+
+  await sleep(400);
+  result.style.display = 'block';
+  result.innerHTML = getIssueHtml();
+  btn.disabled = false; btn.classList.remove('running'); btn.innerHTML = '<span>▶</span> Run Again';
+}
+
+function getIssueHtml() {
+  return '<div class="issue-card">'
+    + '<h3>🤖 Deployment Failure Analysis: ECS tasks failing health checks — container OOM + Wiz CVE in base image</h3>'
+    + '<div style="display:flex;gap:8px;margin-bottom:16px;">'
+    + '<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red);">deployment-failure</span>'
+    + '<span class="badge" style="background:rgba(88,166,255,.15);color:var(--accent);">ai-diagnosis</span>'
+    + '<span class="badge" style="background:rgba(217,158,34,.15);color:var(--orange);">high</span>'
+    + '</div>'
+    + '<h4 style="margin:16px 0 8px;">📋 Root Cause Analysis</h4>'
+    + '<p style="color:var(--muted);line-height:1.7;">The deployment failure has <strong style="color:var(--text);">two contributing factors</strong>:</p>'
+    + '<p style="color:var(--muted);line-height:1.7;margin:8px 0;"><strong style="color:var(--text);">1. Primary — OOM Kill:</strong> ECS tasks are being killed by OOM. The task definition allocates 1024 MB but the application memory usage has grown to ~1.8 GB after the latest code changes added an in-memory caching layer.</p>'
+    + '<p style="color:var(--muted);line-height:1.7;margin:8px 0;"><strong style="color:var(--text);">2. Contributing — CVE in base image:</strong> Wiz detected <span class="severity-critical">CVE-2026-1234</span> (Critical) in the base Docker image. The Wiz runtime sensor also flagged anomalous outbound connections, which may indicate the vulnerability is being probed.</p>'
+    + '<h4 style="margin:16px 0 8px;">🔧 Recommended Fix</h4>'
+    + '<p style="color:var(--muted);line-height:1.7;">Increase ECS task memory to 2048 MB and update the base Docker image to patch CVE-2026-1234. Consider moving the in-memory cache to ElastiCache Redis (already provisioned).</p>'
+    + '<h4 style="margin:16px 0 8px;">📝 Step-by-Step Remediation</h4>'
+    + '<ol class="step-list">'
+    + '<li>Update <code class="code-inline">infra/terraform/main.tf</code>: Change ECS task memory from "1024" to "2048"</li>'
+    + '<li>Update <code class="code-inline">Dockerfile</code>: Change base image from node:20-slim to node:20.12-slim (patched)</li>'
+    + '<li>Run <code class="code-inline">terraform plan</code> to verify only the task definition changes</li>'
+    + '<li>Deploy with <code class="code-inline">terraform apply</code> — ECS rolling update, no downtime</li>'
+    + '<li>Monitor CloudWatch metrics for 30 minutes to confirm memory stabilizes</li>'
+    + '<li>Consider refactoring in-memory cache to use existing ElastiCache Redis cluster</li>'
+    + '<li>Re-run Wiz scan to confirm CVE-2026-1234 is resolved</li>'
+    + '</ol>'
+    + '<h4 style="margin:16px 0 8px;">🛡️ Related Wiz Security Findings</h4>'
+    + '<table>'
+    + '<tr><th>Severity</th><th>Finding</th><th>Resource</th><th>Recommendation</th></tr>'
+    + '<tr><td class="severity-critical">🔴 CRITICAL</td><td>CVE-2026-1234: RCE in Node.js HTTP parser</td><td>ECR: lilly-portal:latest</td><td>Update to node:20.12-slim</td></tr>'
+    + '<tr><td class="severity-high">🟠 HIGH</td><td>CVE-2026-5678: Kernel privilege escalation</td><td>ECS cluster host</td><td>Update ECS AMI</td></tr>'
+    + '<tr><td class="severity-medium">🟡 MEDIUM</td><td>Container running as root</td><td>ECS Task</td><td>Add USER directive to Dockerfile</td></tr>'
+    + '</table>'
+    + '<h4 style="margin:16px 0 8px;">🔍 Wiz Runtime Findings</h4>'
+    + '<table>'
+    + '<tr><th>Type</th><th>Detail</th><th>Risk</th><th>Action</th></tr>'
+    + '<tr><td>Anomalous Network</td><td>Outbound to 198.51.100.42:4444</td><td class="severity-high">🔴 HIGH</td><td>Investigate — possible CVE exploitation</td></tr>'
+    + '<tr><td>Resource Abuse</td><td>Memory at 95% for >10 min</td><td class="severity-high">🔴 HIGH</td><td>Increase limit or fix leak</td></tr>'
+    + '<tr><td>File Access</td><td>/etc/shadow accessed</td><td class="severity-medium">🟡 MEDIUM</td><td>Run as non-root</td></tr>'
+    + '<tr><td>Drift Detection</td><td>SG has SSH rule not in Terraform</td><td class="severity-medium">🟡 MEDIUM</td><td>Run terraform plan</td></tr>'
+    + '</table>'
+    + '<h4 style="margin:16px 0 8px;">📊 Deployment Logs</h4>'
+    + '<pre style="font-size:12px;line-height:1.6;"><code>'
+    + '[14:23:15Z] service lilly-portal-service was unable to place a task\n'
+    + '[14:23:16Z] Reason: Task failed ELB health checks in target-group lilly-portal-tg\n'
+    + '[14:23:18Z] Container killed: OOMKilled (memory limit 1024MB exceeded)\n'
+    + '[14:23:18Z] Exit code: 137 (SIGKILL)\n'
+    + '[14:23:20Z] service lilly-portal-service rolling back to previous task definition\n'
+    + '[14:23:22Z] Rollback complete. Running task count: 3 (previous version)'
+    + '</code></pre>'
+    + '<p style="color:var(--muted);font-size:12px;margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">Generated by AI Deployment Troubleshooter • Amazon Bedrock (Claude) + Wiz Integration</p>'
+    + '</div>';
+}
+
+mermaid.initialize({ startOnLoad:true, theme:'default', securityLevel:'loose' });
+</script>
+</body>
+</html>
