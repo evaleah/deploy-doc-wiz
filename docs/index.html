@@ -131,11 +131,10 @@
 graph TD
     Internet((Internet))
     IGW[Internet Gateway]
-    ALB["ALB :443"]
     APIGW[API Gateway]
     subgraph VPC["VPC 10.0.0.0/16"]
         subgraph Public["Public Subnets"]
-            ALB
+            ALB["ALB :443"]
             NAT[NAT Gateway]
         end
         subgraph Private["Private Subnets"]
@@ -198,11 +197,10 @@ graph TD
 graph TD
     Internet((Internet))
     IGW[Internet Gateway]
-    ALB["ALB - HTTPS :443"]
     APIGW["API Gateway - HTTP API"]
     subgraph VPC["VPC 10.0.0.0/16"]
         subgraph Public["Public Subnets"]
-            ALB
+            ALB["ALB - HTTPS :443"]
             NAT[NAT Gateway]
         end
         subgraph Private["Private Subnets"]
@@ -605,7 +603,7 @@ function getIssueHtml() {
     + '</div>';
 }
 
-mermaid.initialize({ startOnLoad:true, theme:'default', securityLevel:'loose' });
+mermaid.initialize({ startOnLoad:true, theme:'default', securityLevel:'loose', logLevel:'error' });
 </script>
 </body>
 </html>
