@@ -1,32 +1,30 @@
 ###############################################################################
-# Workflow 1: Infrastructure Diagram Generation
+# Workflow: Infrastructure Diagram Generation
 #
-# On every push that touches IaC files, this workflow:
+# On manual trigger (or push to infra/ when uncommented):
 #   1. Parses Terraform & CloudFormation to extract resources and relationships
 #   2. Calls Amazon Bedrock (Claude) to generate an AI-enriched summary
 #   3. Produces Mermaid architecture diagrams
 #   4. Commits updated diagrams back to the repo
-#   5. Posts a PR comment with the visual diff (if in a PR)
 ###############################################################################
 
 name: Generate Infrastructure Diagrams
 
 on:
-  # Disabled for demo — this workflow exists as a reference implementation.
-  # In production, uncomment the triggers below.
-  #
+  # Uncomment push trigger for production use:
   # push:
   #   branches: [main]
   #   paths:
   #     - "infra/**"
-  # pull_request:
-  #   paths:
-  #     - "infra/**"
   workflow_dispatch:
+    inputs:
+      use_simulated:
+        description: "Use simulated Bedrock response (skip real API call)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
-  pull-requests: write
 
 env:
   AWS_REGION: us-east-1
@@ -44,55 +42,47 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
-      - name: Setup Terraform (for plan parsing)
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.7"
+      - name: Install dependencies
+        run: npm ci
 
       - name: Configure AWS credentials
+        if: ${{ github.event.inputs.use_simulated != 'true' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # ---- Step 1: Parse IaC files ----
+      # ---- Parse IaC files ----
       - name: Parse Terraform resources
-        id: tf-parse
-        run: |
-          echo "Parsing Terraform files..."
-          # Extract resource types, names, and relationships from .tf files
-          # In production: use terraform show -json or a custom parser
-          node scripts/parse-terraform.js infra/terraform/ > /tmp/tf-resources.json
+        run: node scripts/parse-terraform.js infra/terraform > /tmp/tf-resources.json
 
       - name: Parse CloudFormation resources
-        id: cfn-parse
-        run: |
-          echo "Parsing CloudFormation templates..."
-          # Extract resources from CloudFormation YAML/JSON
-          node scripts/parse-cloudformation.js infra/cloudformation/ > /tmp/cfn-resources.json
+        run: node scripts/parse-cloudformation.js infra/cloudformation > /tmp/cfn-resources.json
 
-      # ---- Step 2: Detect changes (for PRs) ----
+      # ---- Detect changes ----
       - name: Detect infrastructure changes
-        if: github.event_name == 'pull_request'
         id: diff
         run: |
-          git diff origin/main...HEAD -- infra/ > /tmp/infra-diff.txt
-          echo "diff_size=$(wc -l < /tmp/infra-diff.txt)" >> $GITHUB_OUTPUT
+          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+            git diff HEAD~1 -- infra/ > /tmp/infra-diff.txt || true
+          else
+            echo "Initial commit, no diff available" > /tmp/infra-diff.txt
+          fi
 
-      # ---- Step 3: Call Bedrock for AI analysis ----
+      # ---- AI analysis via Bedrock ----
       - name: AI-enriched analysis via Amazon Bedrock
-        id: ai-analysis
         run: |
-          echo "Calling Amazon Bedrock (Claude) for infrastructure analysis..."
           node scripts/bedrock-analyze.js \
             --tf-resources /tmp/tf-resources.json \
             --cfn-resources /tmp/cfn-resources.json \
             --diff /tmp/infra-diff.txt \
             --output /tmp/ai-analysis.json
+        env:
+          USE_SIMULATED: ${{ github.event.inputs.use_simulated }}
 
-      # ---- Step 4: Generate Mermaid diagrams ----
+      # ---- Generate diagrams ----
       - name: Generate architecture diagrams
         run: |
           node scripts/generate-infra-diagrams.js \
@@ -101,47 +91,14 @@ jobs:
             --ai-analysis /tmp/ai-analysis.json \
             --output docs/
 
-      # ---- Step 5: Commit diagrams (push to main) ----
+      # ---- Commit results ----
       - name: Commit updated diagrams
-        if: github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/
           git diff --staged --quiet || git commit -m "docs: auto-generate infrastructure diagrams
 
-          Updated by GitHub Actions after infrastructure changes.
           AI analysis powered by Amazon Bedrock (Claude).
           Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          git push
-
-      # ---- Step 6: PR comment with diagram preview ----
-      - name: Post diagram to PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const analysis = JSON.parse(fs.readFileSync('/tmp/ai-analysis.json', 'utf8'));
-            const diagram = fs.readFileSync('docs/INFRASTRUCTURE.md', 'utf8');
-
-            const body = `## 🏗️ Infrastructure Change Analysis
-
-            ### AI Summary (Amazon Bedrock)
-            ${analysis.summary}
-
-            ### Risk Assessment
-            ${analysis.risks.map(r => `- ${r.severity === 'high' ? '🔴' : r.severity === 'medium' ? '🟡' : '🟢'} ${r.description}`).join('\n')}
-
-            ### Architecture Diagram
-            ${diagram}
-
-            ---
-            *Generated by [Infrastructure Diagram Bot](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) • Powered by Amazon Bedrock*`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
-            });
+          git push || echo "Nothing to push"
