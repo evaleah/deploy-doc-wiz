@@ -11,10 +11,12 @@
 name: AI Deployment Troubleshooter
 
 on:
-  # Trigger on failed deployment workflows
-  workflow_run:
-    workflows: ["Deploy to Production", "Deploy to Staging"]
-    types: [completed]
+  # Disabled for demo — this workflow exists as a reference implementation.
+  # In production, uncomment the triggers below.
+  #
+  # workflow_run:
+  #   workflows: ["Deploy to Production", "Deploy to Staging"]
+  #   types: [completed]
 
   # Manual trigger for ad-hoc troubleshooting
   workflow_dispatch:

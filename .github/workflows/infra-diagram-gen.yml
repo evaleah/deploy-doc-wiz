@@ -12,13 +12,16 @@
 name: Generate Infrastructure Diagrams
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "infra/**"
-  pull_request:
-    paths:
-      - "infra/**"
+  # Disabled for demo — this workflow exists as a reference implementation.
+  # In production, uncomment the triggers below.
+  #
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - "infra/**"
+  # pull_request:
+  #   paths:
+  #     - "infra/**"
   workflow_dispatch:
 
 permissions:
