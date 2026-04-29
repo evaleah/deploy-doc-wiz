@@ -25,7 +25,7 @@ variable "environment" {
   default = "production"
 }
 variable "app_name" {
-  default = "lilly-portal"
+  default = "acme-app"
 }
 
 # ---------- VPC & Networking ------------------------------------------------
@@ -232,7 +232,7 @@ resource "aws_ecs_task_definition" "app" {
 }
 
 variable "ecr_repo_url" {
-  default = "123456789012.dkr.ecr.us-east-1.amazonaws.com/lilly-portal"
+  default = "123456789012.dkr.ecr.us-east-1.amazonaws.com/acme-app"
 }
 
 resource "aws_ecs_service" "app" {
@@ -259,7 +259,7 @@ resource "aws_rds_cluster" "main" {
   cluster_identifier     = "${var.app_name}-db"
   engine                 = "aurora-postgresql"
   engine_version         = "15.4"
-  database_name          = "lillyportal"
+  database_name          = "acmeapp"
   master_username        = "dbadmin"
   master_password        = random_password.db.result
   vpc_security_group_ids = [aws_security_group.rds_sg.id]

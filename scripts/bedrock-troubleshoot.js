@@ -103,19 +103,19 @@ If a Wiz finding is directly related to the deployment failure, highlight it pro
       {
         severity: 'critical',
         title: 'CVE-2026-1234: Remote code execution in Node.js HTTP parser',
-        resource: 'ECR image: lilly-portal:latest',
+        resource: 'ECR image: acme-app:latest',
         recommendation: 'Update base image to node:20.12-slim or later'
       },
       {
         severity: 'medium',
         title: 'Container running as root user',
-        resource: 'ECS Task: lilly-portal-task',
+        resource: 'ECS Task: acme-app-task',
         recommendation: 'Add USER directive to Dockerfile to run as non-root'
       },
       {
         severity: 'low',
         title: 'S3 bucket allows public read access',
-        resource: 'S3: lilly-portal-assets',
+        resource: 'S3: acme-app-assets',
         recommendation: 'Review bucket policy — may be intentional for static assets'
       }
     ],
@@ -123,7 +123,7 @@ If a Wiz finding is directly related to the deployment failure, highlight it pro
     wiz_runtime: [
       {
         type: 'Anomalous Network Activity',
-        detail: 'Outbound connection to 198.51.100.42:4444 from container lilly-portal-app',
+        detail: 'Outbound connection to 198.51.100.42:4444 from container acme-app',
         risk: 'high',
         action: 'Investigate immediately — may indicate exploitation of CVE-2026-1234'
       },
@@ -142,11 +142,11 @@ If a Wiz finding is directly related to the deployment failure, highlight it pro
     ],
 
     log_excerpts:
-      `[2026-04-28T14:23:15Z] service lilly-portal-service was unable to place a task.\n` +
-      `[2026-04-28T14:23:16Z] Reason: Task failed ELB health checks in target-group lilly-portal-tg\n` +
+      `[2026-04-28T14:23:15Z] service acme-app-service was unable to place a task.\n` +
+      `[2026-04-28T14:23:16Z] Reason: Task failed ELB health checks in target-group acme-app-tg\n` +
       `[2026-04-28T14:23:18Z] Container killed: OOMKilled (memory limit 1024MB exceeded)\n` +
       `[2026-04-28T14:23:18Z] Exit code: 137 (SIGKILL)\n` +
-      `[2026-04-28T14:23:20Z] service lilly-portal-service rolling back to previous task definition\n` +
+      `[2026-04-28T14:23:20Z] service acme-app-service rolling back to previous task definition\n` +
       `[2026-04-28T14:23:22Z] Rollback complete. Running task count: 3 (previous version)`
   };
 }

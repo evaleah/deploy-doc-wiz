@@ -105,7 +105,7 @@ async function fetchVulnerabilities(projectId) {
             detailedName: 'CVE-2026-1234 in node:20-slim',
             vulnerableAsset: {
               id: 'asset-ecr-001',
-              name: 'lilly-portal:latest',
+              name: 'acme-app:latest',
               type: 'CONTAINER_IMAGE',
               cloudPlatform: 'AWS'
             },
@@ -122,7 +122,7 @@ async function fetchVulnerabilities(projectId) {
             detailedName: 'CVE-2026-5678 in ECS host kernel',
             vulnerableAsset: {
               id: 'asset-ecs-001',
-              name: 'lilly-portal-cluster',
+              name: 'acme-app-cluster',
               type: 'VIRTUAL_MACHINE',
               cloudPlatform: 'AWS'
             },
@@ -140,7 +140,7 @@ async function main() {
   const args = process.argv.slice(2);
   const getArg = (flag) => { const i = args.indexOf(flag); return i >= 0 ? args[i + 1] : null; };
 
-  const projectId = getArg('--project-id') || 'lilly-portal-prod';
+  const projectId = getArg('--project-id') || 'acme-app-prod';
   const outputFile = getArg('--output') || '/tmp/wiz-vulns.json';
 
   console.log(`Fetching Wiz vulnerability findings for project: ${projectId}`);

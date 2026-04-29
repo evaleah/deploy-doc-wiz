@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  API Gateway + Lambda backend for the Lilly Portal internal APIs.
+  API Gateway + Lambda backend for internal APIs.
   Deployed alongside the main Terraform infrastructure.
 
 Parameters:
@@ -10,7 +10,7 @@ Parameters:
     AllowedValues: [development, staging, production]
   AppName:
     Type: String
-    Default: lilly-portal
+    Default: acme-app
   VpcId:
     Type: AWS::EC2::VPC::Id
     Description: VPC ID from Terraform-managed infrastructure
@@ -26,7 +26,7 @@ Resources:
       Name: !Sub "${AppName}-api"
       ProtocolType: HTTP
       CorsConfiguration:
-        AllowOrigins: ["https://portal.lilly.com"]
+        AllowOrigins: ["https://portal.example.com"]
         AllowMethods: [GET, POST, PUT, DELETE]
         AllowHeaders: [Authorization, Content-Type]
 

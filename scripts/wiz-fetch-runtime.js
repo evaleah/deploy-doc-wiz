@@ -63,7 +63,7 @@ async function fetchRuntimeFindings(projectId) {
             sourceProcess: 'node /app/server.js',
             destinationAddress: '198.51.100.42:4444',
             resource: {
-              name: 'lilly-portal-task-abc123',
+              name: 'acme-app-task-abc123',
               type: 'ECS_TASK',
               region: 'us-east-1'
             },
@@ -77,7 +77,7 @@ async function fetchRuntimeFindings(projectId) {
             description: 'Container memory usage at 95% of limit (973MB / 1024MB) for >10 minutes',
             sourceProcess: 'node /app/server.js',
             resource: {
-              name: 'lilly-portal-task-abc123',
+              name: 'acme-app-task-abc123',
               type: 'ECS_TASK',
               region: 'us-east-1'
             },
@@ -91,7 +91,7 @@ async function fetchRuntimeFindings(projectId) {
             description: 'Process accessed /etc/shadow — unusual for application container',
             sourceProcess: 'node /app/server.js',
             resource: {
-              name: 'lilly-portal-task-abc123',
+              name: 'acme-app-task-abc123',
               type: 'ECS_TASK',
               region: 'us-east-1'
             },
@@ -104,7 +104,7 @@ async function fetchRuntimeFindings(projectId) {
             severity: 'MEDIUM',
             description: 'Security group sg-0abc123 has rule not matching Terraform state: inbound 0.0.0.0/0:22',
             resource: {
-              name: 'lilly-portal-ecs-sg',
+              name: 'acme-app-ecs-sg',
               type: 'SECURITY_GROUP',
               region: 'us-east-1'
             },
@@ -122,7 +122,7 @@ async function main() {
   const args = process.argv.slice(2);
   const getArg = (flag) => { const i = args.indexOf(flag); return i >= 0 ? args[i + 1] : null; };
 
-  const projectId = getArg('--project-id') || 'lilly-portal-prod';
+  const projectId = getArg('--project-id') || 'acme-app-prod';
   const outputFile = getArg('--output') || '/tmp/wiz-runtime.json';
 
   console.log(`Fetching Wiz runtime findings for project: ${projectId}`);
