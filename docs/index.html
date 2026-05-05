@@ -127,40 +127,7 @@
     </div>
     <div class="diagram-section">
       <h3>📐 Auto-Generated Network Topology</h3>
-      <div class="mermaid" id="s1-diagram-render">
-graph TD
-    Internet((Internet))
-    IGW[Internet Gateway]
-    APIGW[API Gateway]
-    subgraph VPC["VPC 10.0.0.0/16"]
-        subgraph Public["Public Subnets"]
-            ALB["ALB :443"]
-            NAT[NAT Gateway]
-        end
-        subgraph Private["Private Subnets"]
-            ECS["ECS Fargate - 3 Tasks"]
-            Lambda1["Lambda: Authorizer"]
-            Lambda2["Lambda: Processor"]
-            RDS[("Aurora PostgreSQL")]
-            Redis[("Redis Cluster")]
-        end
-    end
-    SQS[[SQS Queue]]
-    DDB[("DynamoDB")]
-    Internet --> IGW --> ALB
-    Internet --> APIGW
-    ALB --> ECS
-    APIGW --> Lambda1
-    APIGW --> Lambda2
-    ECS --> RDS
-    ECS --> Redis
-    Lambda2 --> SQS
-    Lambda2 --> DDB
-    ECS -.-> NAT --> Internet
-    style VPC fill:#e1f5fe,stroke:#0288d1
-    style Public fill:#fff3e0,stroke:#ef6c00
-    style Private fill:#e8f5e9,stroke:#2e7d32
-      </div>
+      <div id="s1-diagram-render" style="background:#fff;border-radius:6px;padding:20px;text-align:center;"></div>
     </div>
   </div>
 </div>
@@ -505,7 +472,44 @@ async function runScenario1() {
   result.style.display = 'block';
   document.getElementById('s1-diff').innerHTML = getDiffHtml();
   document.getElementById('s1-analysis').innerHTML = getAnalysisHtml();
-  renderMermaidIn(result);
+  // Render the diagram directly via Mermaid API
+  try {
+    const diagramCode = `graph TD
+    Internet((Internet))
+    APIGW[API Gateway]
+    subgraph VPC["VPC 10.0.0.0/16"]
+        subgraph Public["Public Subnets"]
+            ALB["ALB :443"]
+            NAT[NAT Gateway]
+        end
+        subgraph Private["Private Subnets"]
+            ECS["ECS Fargate - 3 Tasks"]
+            Lambda1["Lambda: Authorizer"]
+            Lambda2["Lambda: Processor"]
+            RDS[("Aurora PostgreSQL")]
+            Redis[("Redis Cluster")]
+        end
+    end
+    SQS[[SQS Queue]]
+    DDB[("DynamoDB")]
+    Internet --> ALB
+    Internet --> APIGW
+    ALB --> ECS
+    APIGW --> Lambda1
+    APIGW --> Lambda2
+    ECS --> RDS
+    ECS --> Redis
+    Lambda2 --> SQS
+    Lambda2 --> DDB
+    ECS -.-> NAT
+    style VPC fill:#e1f5fe,stroke:#0288d1
+    style Public fill:#fff3e0,stroke:#ef6c00
+    style Private fill:#e8f5e9,stroke:#2e7d32`;
+    const {svg} = await mermaid.render('s1diag', diagramCode);
+    document.getElementById('s1-diagram-render').innerHTML = svg;
+  } catch(e) {
+    document.getElementById('s1-diagram-render').innerHTML = '<p style="color:red;">Diagram render error: '+e.message+'</p>';
+  }
   btn.disabled = false; btn.classList.remove('running'); btn.innerHTML = '<span>▶</span> Run Again';
 }
 
