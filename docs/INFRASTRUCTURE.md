@@ -3,7 +3,7 @@
 > Auto-generated from Terraform and CloudFormation definitions.
 > AI analysis powered by Amazon Bedrock (Claude).
 >
-> Last generated: 2026-05-05T18:44:43.267Z
+> Last generated: 2026-05-05T18:52:54.090Z
 
 ## Overview
 
