@@ -47,6 +47,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: |
+          sudo apt-get install -y graphviz
+          pip install -r requirements.txt
+
       - name: Configure AWS credentials
         if: ${{ github.event.inputs.use_simulated != 'true' }}
         uses: aws-actions/configure-aws-credentials@v4
@@ -83,13 +93,16 @@ jobs:
           USE_SIMULATED: ${{ github.event.inputs.use_simulated }}
 
       # ---- Generate diagrams ----
-      - name: Generate architecture diagrams
+      - name: Generate Mermaid architecture diagrams
         run: |
           node scripts/generate-infra-diagrams.js \
             --tf-resources /tmp/tf-resources.json \
             --cfn-resources /tmp/cfn-resources.json \
             --ai-analysis /tmp/ai-analysis.json \
             --output docs/
+
+      - name: Generate AWS icon diagrams
+        run: python scripts/generate-aws-diagram.py --output docs
 
       # ---- Commit results ----
       - name: Commit updated diagrams
