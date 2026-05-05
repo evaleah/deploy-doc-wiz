@@ -46,14 +46,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Configure AWS credentials
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.include_wiz == 'true' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
