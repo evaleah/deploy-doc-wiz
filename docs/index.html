@@ -160,8 +160,24 @@
 <!-- ==================== ARCHITECTURE DIAGRAMS ==================== -->
 <div class="tab-content" id="tab-arch">
   <div class="diagram-section">
-    <h3>🏗️ Network Topology (Auto-Generated from IaC)</h3>
-    <p style="color:var(--muted);margin-bottom:12px;">When the workflow runs with graphviz installed, these are produced with official AWS Architecture Icons. Below are the Mermaid versions that render natively in GitHub.</p>
+    <h3>🏗️ Network Topology (Official AWS Icons)</h3>
+    <p style="color:var(--muted);margin-bottom:12px;">Auto-generated from Terraform + CloudFormation using the Python <code class="code-inline">diagrams</code> library with official AWS Architecture Icons.</p>
+    <div style="background:#fff;border-radius:6px;padding:20px;text-align:center;">
+      <img src="architecture.png" alt="AWS Architecture Diagram" style="max-width:100%;height:auto;" />
+    </div>
+  </div>
+  <div class="diagram-section">
+    <h3>🔒 Security Zones (Official AWS Icons)</h3>
+    <div style="background:#fff;border-radius:6px;padding:20px;text-align:center;">
+      <img src="security-zones.png" alt="Security Zones Diagram" style="max-width:100%;height:auto;" />
+    </div>
+  </div>
+  <div class="diagram-section">
+    <h3>🔗 Service Dependencies (Official AWS Icons)</h3>
+    <div style="background:#fff;border-radius:6px;padding:20px;text-align:center;">
+      <img src="service-dependencies.png" alt="Service Dependencies Diagram" style="max-width:100%;height:auto;" />
+    </div>
+  </div>
   <div class="diagram-section">
     <h3>🏗️ Network Topology (from Terraform + CloudFormation)</h3>
     <div class="mermaid">
