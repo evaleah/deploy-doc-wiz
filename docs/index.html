@@ -398,8 +398,10 @@ mermaid.initialize({ startOnLoad:false, theme:'default', securityLevel:'loose' }
 async function renderMermaidIn(container) {
   const els = container.querySelectorAll('.mermaid:not([data-processed])');
   for (const el of els) {
+    // Skip if element or parent is hidden
+    if (el.offsetParent === null && !el.closest('.tab-content.active')) continue;
     const code = el.textContent.trim();
-    if (!code) continue;
+    if (!code || code.startsWith('<')) continue;
     try {
       const id = 'mermaid-' + Math.random().toString(36).substring(2,10);
       const {svg} = await mermaid.render(id, code);
@@ -408,12 +410,13 @@ async function renderMermaidIn(container) {
     } catch(e) {
       console.error('Mermaid error:', e);
       el.innerHTML = '<pre style="color:red;text-align:left;">Diagram error: '+e.message+'</pre>';
+      el.setAttribute('data-processed','true');
     }
   }
 }
 
-// Render visible tab on load
-renderMermaidIn(document.querySelector('.tab-content.active'));
+// Render visible diagrams on load (only those not inside hidden parents)
+setTimeout(() => renderMermaidIn(document.querySelector('.tab-content.active')), 100);
 
 // Tab switching
 document.querySelectorAll('.tab').forEach(tab => {
