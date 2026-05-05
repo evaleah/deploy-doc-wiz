@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DeployIQ — AI-Powered Infrastructure Intelligence</title>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
   <style>
     :root {
       --bg:#0d1117; --surface:#161b22; --surface-2:#1c2129;
@@ -345,10 +345,9 @@ graph TB
 mermaid.initialize({ startOnLoad:false, theme:'default', securityLevel:'loose' });
 
 async function renderMermaidIn(container) {
+  if (typeof mermaid === 'undefined') { console.error('Mermaid not loaded'); return; }
   const els = container.querySelectorAll('.mermaid:not([data-processed])');
   for (const el of els) {
-    // Skip if element or parent is hidden
-    if (el.offsetParent === null && !el.closest('.tab-content.active')) continue;
     const code = el.textContent.trim();
     if (!code || code.startsWith('<')) continue;
     try {
@@ -357,8 +356,8 @@ async function renderMermaidIn(container) {
       el.innerHTML = svg;
       el.setAttribute('data-processed','true');
     } catch(e) {
-      console.error('Mermaid error:', e);
-      el.innerHTML = '<pre style="color:red;text-align:left;">Diagram error: '+e.message+'</pre>';
+      console.error('Mermaid render error:', e.message);
+      el.innerHTML = '<pre style="color:red;text-align:left;font-size:11px;">Diagram error: '+e.message+'</pre>';
       el.setAttribute('data-processed','true');
     }
   }
