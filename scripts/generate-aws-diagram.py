@@ -38,14 +38,8 @@ def generate_network_topology(output_path):
         "fontsize": "11",
         "bgcolor": "white",
         "pad": "0.4",
-        "nodesep": "0.5",
-        "ranksep": "0.75",
-    }
-
-    node_attr = {
-        "fontsize": "10",
-        "width": "1.2",
-        "height": "1.2",
+        "nodesep": "0.4",
+        "ranksep": "0.6",
     }
 
     with Diagram(
@@ -54,7 +48,6 @@ def generate_network_topology(output_path):
         show=False,
         direction="TB",
         graph_attr=graph_attr,
-        node_attr=node_attr,
         outformat="png",
     ):
         client = Client("Users")
@@ -112,14 +105,8 @@ def generate_security_zones(output_path):
         "fontsize": "11",
         "bgcolor": "white",
         "pad": "0.4",
-        "nodesep": "0.5",
-        "ranksep": "0.75",
-    }
-
-    node_attr = {
-        "fontsize": "10",
-        "width": "1.2",
-        "height": "1.2",
+        "nodesep": "0.4",
+        "ranksep": "0.6",
     }
 
     with Diagram(
@@ -128,7 +115,6 @@ def generate_security_zones(output_path):
         show=False,
         direction="TB",
         graph_attr=graph_attr,
-        node_attr=node_attr,
         outformat="png",
     ):
         with Cluster("Public Zone - Internet Facing", graph_attr={"bgcolor": "#fff3e0"}):
@@ -163,14 +149,8 @@ def generate_service_flow(output_path):
         "fontsize": "11",
         "bgcolor": "white",
         "pad": "0.4",
-        "nodesep": "0.5",
-        "ranksep": "0.75",
-    }
-
-    node_attr = {
-        "fontsize": "10",
-        "width": "1.2",
-        "height": "1.2",
+        "nodesep": "0.4",
+        "ranksep": "0.6",
     }
 
     with Diagram(
@@ -179,7 +159,6 @@ def generate_service_flow(output_path):
         show=False,
         direction="LR",
         graph_attr=graph_attr,
-        node_attr=node_attr,
         outformat="png",
     ):
         client = Client("Client")
